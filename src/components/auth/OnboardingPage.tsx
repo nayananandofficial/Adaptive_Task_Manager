@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { GraduationCap, BookOpen, PenTool, Briefcase, Users, ArrowRight } from 'lucide-react'
 
@@ -45,35 +45,31 @@ const roles = [
   }
 ]
 
+type RoleId = (typeof roles)[number]['id']
+
 export function OnboardingPage() {
-  const { updateProfile, refetchProfile } = useAuth() // Add refetchProfile if you have it
-  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const { updateProfile, refetchProfile } = useAuth()
+  const [selectedRole, setSelectedRole] = useState<RoleId | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
   const handleRoleSelect = async () => {
     if (!selectedRole) return
 
-    console.log('🎯 Starting onboarding with role:', selectedRole)
     setIsUpdating(true)
-    
+
     try {
-      console.log('📤 Updating profile for onboarding...')
       await updateProfile({
-        role: selectedRole as any,
+        role: selectedRole,
         onboarded: true
       })
-      console.log('✅ Profile updated successfully')
-      
-      // CRITICAL: Refetch the profile to get the updated data
-      console.log('🔄 Refetching profile to get updated data...')
-      if (refetchProfile) {
-        await refetchProfile()
-      }
-      console.log('✅ Onboarding completed successfully')
-      
+
+      await refetchProfile()
     } catch (error) {
-      console.error('❌ Error updating profile:', error)
-      alert(`Failed to complete onboarding: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
+      alert(
+        `Failed to complete onboarding: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }. Please try again.`
+      )
     } finally {
       setIsUpdating(false)
     }
@@ -83,11 +79,10 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Role
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Role</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We'll customize your workspace with templates and features tailored to your work style
+            We&apos;ll customize your workspace with templates and features tailored to your work
+            style
           </p>
         </div>
 
@@ -110,15 +105,11 @@ export function OnboardingPage() {
                 <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${role.color} mb-4`}>
                   <Icon className="h-6 w-6 text-white" />
                 </div>
-                
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {role.title}
-                </h3>
-                
-                <p className="text-gray-600 mb-4">
-                  {role.description}
-                </p>
-                
+
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{role.title}</h3>
+
+                <p className="text-gray-600 mb-4">{role.description}</p>
+
                 <ul className="space-y-1">
                   {role.features.map((feature, index) => (
                     <li key={index} className="text-sm text-gray-500 flex items-center gap-2">
@@ -136,7 +127,7 @@ export function OnboardingPage() {
           <div className="text-center">
             <button
               onClick={handleRoleSelect}
-              disabled={!selectedRole || isUpdating}
+              disabled={isUpdating}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {isUpdating ? (

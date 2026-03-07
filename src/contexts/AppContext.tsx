@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from 'react'
 import type { Database } from '../lib/database.types'
 
 type Board = Database['public']['Tables']['boards']['Row']
@@ -111,7 +111,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 interface AppContextType {
   state: AppState
-  dispatch: React.Dispatch<AppAction>
+  dispatch: Dispatch<AppAction>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -124,7 +124,7 @@ export function useApp() {
   return context
 }
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState)
 
   return (

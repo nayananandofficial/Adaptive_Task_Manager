@@ -1,4 +1,3 @@
-import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { Plus, BookOpen, GraduationCap, PenTool, Briefcase, Users } from 'lucide-react'
 

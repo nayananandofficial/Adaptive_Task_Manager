@@ -1,4 +1,3 @@
-import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { Trello, Menu, Search, Bell, User, LogOut } from 'lucide-react'

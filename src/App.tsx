@@ -1,4 +1,3 @@
-import React from 'react'
 import { BrowserRouter as Router } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
@@ -10,14 +9,6 @@ import { Dashboard } from './components/dashboard/Dashboard'
 function AppContent() {
   const { user, profile, loading } = useAuth()
 
-  console.log('🎯 AppContent render state:', { 
-    hasUser: !!user, 
-    hasProfile: !!profile, 
-    profileOnboarded: profile?.onboarded,
-    loading 
-  })
-
-  // Show loading spinner while authentication and profile data is being fetched
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -29,21 +20,14 @@ function AppContent() {
     )
   }
 
-  // Show login page if no user is authenticated
   if (!user) {
-    console.log('📄 Rendering LoginPage - no user authenticated')
     return <LoginPage />
   }
 
-  // Show onboarding for users who haven't completed onboarding
-  // This includes users with no profile (new users) or users with profile but onboarded: false
   if (!profile?.onboarded) {
-    console.log('📄 Rendering OnboardingPage - user not onboarded')
     return <OnboardingPage />
   }
 
-  // Show dashboard for onboarded users
-  console.log('📄 Rendering Dashboard - user is onboarded')
   return (
     <Layout>
       <Dashboard />

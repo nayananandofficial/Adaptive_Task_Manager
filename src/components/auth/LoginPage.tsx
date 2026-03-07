@@ -1,5 +1,4 @@
-import React from 'react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { Trello, Sparkles, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
@@ -22,7 +21,7 @@ export function LoginPage() {
     }
   }
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault()
     if (!email || !password) {
       setError('Please fill in all fields')
@@ -38,9 +37,9 @@ export function LoginPage() {
       } else {
         await signInWithEmail(email, password)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error with email auth:', error)
-      setError(error.message || 'Authentication failed')
+      setError(error instanceof Error ? error.message : 'Authentication failed')
     } finally {
       setAuthLoading(false)
     }

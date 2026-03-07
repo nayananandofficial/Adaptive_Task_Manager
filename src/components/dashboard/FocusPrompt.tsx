@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useApp } from '../../contexts/AppContext'
 import { Target, Sparkles } from 'lucide-react'
 
@@ -6,7 +6,7 @@ export function FocusPrompt() {
   const { dispatch } = useApp()
   const [focus, setFocus] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (focus.trim()) {
       dispatch({ type: 'SET_FOCUS_TODAY', payload: focus.trim() })

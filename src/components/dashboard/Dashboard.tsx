@@ -1,12 +1,9 @@
-import React, { useEffect } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { FocusPrompt } from './FocusPrompt'
 import { EmptyState } from './EmptyState'
 import { KanbanView } from '../views/KanbanView'
 
 export function Dashboard() {
-  const { profile } = useAuth()
   const { state } = useApp()
 
   // Show focus prompt if user hasn't set focus for today

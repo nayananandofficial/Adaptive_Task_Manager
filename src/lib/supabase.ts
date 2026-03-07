@@ -9,6 +9,6 @@ if ((!supabaseUrl || !supabaseAnonKey) && import.meta.env.VITE_BYPASS_AUTH !== '
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = supabaseUrl && supabaseAnonKey 
+export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient<Database>(supabaseUrl, supabaseAnonKey)
-  : null as any // This will only be used when BYPASS_AUTH is true
+  : null

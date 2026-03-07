@@ -1,11 +1,8 @@
-import React from 'react'
 import { useApp } from '../../contexts/AppContext'
-import { useAuth } from '../../contexts/AuthContext'
 import { Plus, Home, Calendar, BarChart3, List, Settings } from 'lucide-react'
 
 export function Sidebar() {
   const { state, dispatch } = useApp()
-  const { profile } = useAuth()
 
   if (!state.sidebarOpen) return null
 
