@@ -1,5 +1,7 @@
-import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useReducer, type Dispatch, type ReactNode } from 'react'
 import type { Database } from '../lib/database.types'
+import { useAuth } from './AuthContext'
+import { getBoards } from '../services/boardService'
 
 type Board = Database['public']['Tables']['boards']['Row']
 type List = Database['public']['Tables']['lists']['Row']
@@ -126,6 +128,29 @@ export function useApp() {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    let isActive = true
+
+    const loadBoards = async (): Promise<void> => {
+      if (!user?.id) return
+
+      try {
+        const boards = await getBoards(user.id) //currently when the app loads this function is fine because the board amount is small, In the future you might also load: lists and cards here, or implement pagination if the user has a lot of boards. For now we can just load all boards and filter them in the UI, but if performance becomes an issue we can add pagination or load lists/cards on demand when a board is selected.
+        if (!isActive) return
+        dispatch({ type: 'SET_BOARDS', payload: boards })
+      } catch (error) {
+        console.error('Failed to load boards:', error)
+      }
+    }
+
+    void loadBoards()
+
+    return () => {
+      isActive = false
+    }
+  }, [user?.id])
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

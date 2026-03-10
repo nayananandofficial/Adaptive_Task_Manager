@@ -8,7 +8,7 @@ export function Sidebar() {
   const { user } = useAuth()
 
   const handleCreateBoard = async (): Promise<void> => {
-    const titleInput = window.prompt('Enter board title')
+    const titleInput = window.prompt('Enter board title') //this is fine for testing , but should be replaced with a proper modal in production (eg. CreateBoardModal). Create Board button → opens modal → user enters title and clicks "Create" → modal calls handleCreateBoard with title as argument. This way we can also add more fields in the future (eg. color, description, etc.) without changing the function signature. 
     if (titleInput === null) return
 
     const title = titleInput.trim()
