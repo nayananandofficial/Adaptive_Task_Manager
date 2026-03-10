@@ -1,8 +1,32 @@
 import { useApp } from '../../contexts/AppContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { createBoard } from '../../services/boardService'
 import { Plus, Home, Calendar, BarChart3, List, Settings } from 'lucide-react'
 
 export function Sidebar() {
   const { state, dispatch } = useApp()
+  const { user } = useAuth()
+
+  const handleCreateBoard = async (): Promise<void> => {
+    const titleInput = window.prompt('Enter board title')
+    if (titleInput === null) return
+
+    const title = titleInput.trim()
+    if (!title) return
+
+    if (!user?.id) {
+      window.alert('You must be signed in to create a board.')
+      return
+    }
+
+    try {
+      const board = await createBoard(title, user.id)
+      dispatch({ type: 'ADD_BOARD', payload: board })
+    } catch (error) {
+      console.error('Failed to create board:', error)
+      window.alert('Could not create board. Please try again.')
+    }
+  }
 
   if (!state.sidebarOpen) return null
 
@@ -16,7 +40,10 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
       <div className="p-4">
-        <button className="w-full flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button
+          onClick={() => void handleCreateBoard()}
+          className="w-full flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <Plus className="h-4 w-4" />
           Create Board
         </button>
