@@ -1,6 +1,65 @@
 # Adaptive_Task_Manager
 
-## Problems
+## Overview
+
+## Current Features
+
+### Authentication
+
+- Supabase authentication (email/password + Google OAuth)
+- Local fallback auth mode for development
+- Onboarding flow that assigns a role to each user
+
+### Role-based Workspace
+
+Users choose a role during onboarding:
+
+- `Student`
+- `Teacher`
+- `Writer`
+- `Freelancer`
+- `Project Manager`
+
+Each role prepares the workspace for future template boards.
+
+### Board Management
+
+- Create boards from the sidebar
+- Boards are saved in Supabase
+- Boards load automatically on application start
+- Boards are filtered by authenticated user
+
+### State Management
+
+- Global state handled through React Context + Reducer pattern
+- Actions implemented for:
+  - `ADD_BOARD`
+  - `SET_BOARDS`
+  - `UPDATE_BOARD`
+  - `DELETE_BOARD`
+
+### Data Layer
+
+- Service layer (`boardService.ts`) handles Supabase operations
+- Clean separation between UI, state, and database logic
+
+## Architecture
+
+The application follows a layered architecture:
+
+UI Components  
+→ `React Context` (State Management)  
+→ `Service Layer` (Database Operations)  
+→ `Supabase` Backend
+
+Key modules:
+
+- `components/` – UI components (Sidebar, Dashboard, Views)
+- `contexts/` – Global state and authentication
+- `services/` – Database interaction logic
+- `lib/` – Supabase client configuration
+
+## Problems & Fixes
 
 ### What happened
 
@@ -27,7 +86,7 @@
 - Lint has no errors (only minor warnings).
 - App can run even if Supabase is unavailable, using local mode.
 
-### Next steps
+## Next steps
 
 1. Create a `.env` file.
 2. For immediate run (no Supabase): set `VITE_BYPASS_AUTH=true`.
