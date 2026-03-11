@@ -1,7 +1,7 @@
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
-import { createBoard } from '../../services/boardService'
-import { Plus, Home, Calendar, BarChart3, List, Settings } from 'lucide-react'
+import { createBoard, deleteBoard } from '../../services/boardService'
+import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2 } from 'lucide-react'
 
 export function Sidebar() {
   const { state, dispatch } = useApp()
@@ -87,21 +87,48 @@ export function Sidebar() {
             </p>
           ) : (
             state.boards.map((board) => (
-              <button
+              <div
                 key={board.id}
-                onClick={() => dispatch({ type: 'SET_CURRENT_BOARD', payload: board })}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                className={`w-full flex items-center rounded-lg text-sm transition-colors ${
                   state.currentBoard?.id === board.id
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <div
-                  className="w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: board.color }}
-                />
-                <span className="truncate">{board.title}</span>
-              </button>
+                <button
+                  onClick={() => dispatch({ type: 'SET_CURRENT_BOARD', payload: board })}
+                  className="flex-1 flex items-center gap-2 px-3 py-2 min-w-0"
+                >
+                  <div
+                    className="w-3 h-3 rounded-sm"
+                    style={{ backgroundColor: board.color }}
+                  />
+                  <span className="truncate">{board.title}</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete board ${board.title}`}
+                  className="px-2 py-2 rounded-lg hover:bg-gray-200/70 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+
+                    const confirmed = window.confirm(`Delete "${board.title}"? This cannot be undone.`)
+                    if (!confirmed) return
+
+                    void (async () => {
+                      try {
+                        await deleteBoard(board.id)
+                        dispatch({ type: 'DELETE_BOARD', payload: board.id })
+                      } catch (error) {
+                        console.error('Failed to delete board:', error)
+                        window.alert('Could not delete board. Please try again.')
+                      }
+                    })()
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             ))
           )}
         </div>

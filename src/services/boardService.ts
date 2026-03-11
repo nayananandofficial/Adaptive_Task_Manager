@@ -45,5 +45,20 @@ export async function createBoard(title: string, user_id: string): Promise<Board
   return data
 }
 
+export async function deleteBoard(boardId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const { error } = await supabase
+    .from('boards')
+    .delete()
+    .eq('id', boardId)
+
+  if (error) {
+    throw error
+  }
+}
+
 //service currently returns raw database rows.
 //Later I might want to add a type guard or transformation layer, but that is optional for now.
