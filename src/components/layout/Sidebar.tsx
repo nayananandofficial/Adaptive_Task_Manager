@@ -1,7 +1,7 @@
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
-import { createBoard, deleteBoard } from '../../services/boardService'
-import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2 } from 'lucide-react'
+import { createBoard, deleteBoard, updateBoard } from '../../services/boardService'
+import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2, Edit2 } from 'lucide-react'
 
 export function Sidebar() {
   const { state, dispatch } = useApp()
@@ -89,7 +89,7 @@ export function Sidebar() {
             state.boards.map((board) => (
               <div
                 key={board.id}
-                className={`w-full flex items-center rounded-lg text-sm transition-colors ${
+                className={`w-full flex items-center rounded-lg text-sm transition-colors pr-1 ${
                   state.currentBoard?.id === board.id
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -107,8 +107,34 @@ export function Sidebar() {
                 </button>
                 <button
                   type="button"
+                  aria-label={`Rename board ${board.title}`}
+                  className="px-1 py-2 rounded-lg hover:bg-gray-200/70 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+
+                    const newTitle = window.prompt('Rename board', board.title)
+                    if (newTitle === null) return
+
+                    const trimmed = newTitle.trim()
+                    if (!trimmed || trimmed === board.title) return
+
+                    void (async () => {
+                      try {
+                        const updated = await updateBoard(board.id, { title: trimmed })
+                        dispatch({ type: 'UPDATE_BOARD', payload: updated })
+                      } catch (error) {
+                        console.error('Failed to rename board:', error)
+                        window.alert('Could not rename board. Please try again.')
+                      }
+                    })()
+                  }}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
                   aria-label={`Delete board ${board.title}`}
-                  className="px-2 py-2 rounded-lg hover:bg-gray-200/70 transition-colors"
+                  className="px-1 py-2 rounded-lg hover:bg-gray-200/70 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation()
 

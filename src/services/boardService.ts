@@ -60,5 +60,24 @@ export async function deleteBoard(boardId: string): Promise<void> {
   }
 }
 
+export async function updateBoard(boardId: string, updates: Partial<Pick<Board, 'title' | 'color' | 'position'>>): Promise<Board> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const { data, error } = await supabase
+    .from('boards')
+    .update(updates)
+    .eq('id', boardId)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 //service currently returns raw database rows.
 //Later I might want to add a type guard or transformation layer, but that is optional for now.
