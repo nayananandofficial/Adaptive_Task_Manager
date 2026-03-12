@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useReducer, type Dispatch, type R
 import type { Database } from '../lib/database.types'
 import { useAuth } from './AuthContext'
 import { getBoards } from '../services/boardService'
+import { getLists } from '../services/listService'
 
 type Board = Database['public']['Tables']['boards']['Row']
 type List = Database['public']['Tables']['lists']['Row']
@@ -151,6 +152,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isActive = false
     }
   }, [user?.id])
+
+  useEffect(() => {
+    let isActive = true
+
+    const boardId = state.currentBoard?.id
+    if (!boardId) {
+      dispatch({ type: 'SET_LISTS', payload: [] })
+      return () => {
+        isActive = false
+      }
+    }
+
+    dispatch({ type: 'SET_LISTS', payload: [] })
+
+    const loadLists = async (): Promise<void> => {
+      try {
+        const lists = await getLists(boardId)
+        if (!isActive) return
+        dispatch({ type: 'SET_LISTS', payload: lists })
+      } catch (error) {
+        console.error('Failed to load lists:', error)
+      }
+    }
+
+    void loadLists()
+
+    return () => {
+      isActive = false
+    }
+  }, [state.currentBoard?.id])
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
