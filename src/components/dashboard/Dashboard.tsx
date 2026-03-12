@@ -7,9 +7,9 @@ export function Dashboard() {
   const { state } = useApp()
 
   // Show focus prompt if user hasn't set focus for today
-  if (!state.focusToday) {
-    return <FocusPrompt />
-  }
+  // if (!state.focusToday) {
+  //   return <FocusPrompt />
+  // }
 
   // Show empty state if no boards
   if (state.boards.length === 0) {

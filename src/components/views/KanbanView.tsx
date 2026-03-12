@@ -1,8 +1,33 @@
 import { useApp } from '../../contexts/AppContext'
 import { Plus } from 'lucide-react'
+import { createList } from '../../services/listService'
 
 export function KanbanView() {
-  const { state } = useApp()
+  const { state, dispatch } = useApp()
+
+  const handleCreateList = (): void => {
+    const boardId = state.currentBoard?.id
+    if (!boardId) {
+      window.alert('Select a board first.')
+      return
+    }
+
+    const titleInput = window.prompt('List title')
+    if (titleInput === null) return
+
+    const title = titleInput.trim()
+    if (!title) return
+
+    void (async () => {
+      try {
+        const list = await createList(boardId, title)
+        dispatch({ type: 'ADD_LIST', payload: list })
+      } catch (error) {
+        console.error('Failed to create list:', error)
+        window.alert('Could not create list. Please try again.')
+      }
+    })()
+  }
 
   if (!state.currentBoard) {
     return (
@@ -67,7 +92,10 @@ export function KanbanView() {
             </div>
           ))}
 
-          <button className="w-72 h-fit bg-gray-100 hover:bg-gray-200 rounded-lg p-4 transition-colors flex items-center gap-2 text-gray-600">
+          <button
+            onClick={handleCreateList}
+            className="w-72 h-fit bg-gray-100 hover:bg-gray-200 rounded-lg p-4 transition-colors flex items-center gap-2 text-gray-600"
+          >
             <Plus className="h-4 w-4" />
             Add another list
           </button>
