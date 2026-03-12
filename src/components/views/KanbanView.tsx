@@ -1,7 +1,7 @@
 import { useApp } from '../../contexts/AppContext'
 import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { createList, deleteList, updateList } from '../../services/listService'
-import { createCard, updateCard } from '../../services/cardService'
+import { createCard, deleteCard, updateCard } from '../../services/cardService'
 
 export function KanbanView() {
   const { state, dispatch } = useApp()
@@ -99,6 +99,21 @@ export function KanbanView() {
     })()
   }
 
+  const handleDeleteCard = (cardId: string, title: string): void => {
+    const confirmed = window.confirm(`Delete card "${title}"?`)
+    if (!confirmed) return
+
+    void (async () => {
+      try {
+        await deleteCard(cardId)
+        dispatch({ type: 'DELETE_CARD', payload: cardId })
+      } catch (error) {
+        console.error('Failed to delete card:', error)
+        window.alert('Could not delete card. Please try again.')
+      }
+    })()
+  }
+
   if (!state.currentBoard) {
     return (
       <div className="p-8 text-center">
@@ -152,17 +167,30 @@ export function KanbanView() {
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="font-medium text-gray-900">{card.title}</h4>
-                        <button
-                          type="button"
-                          aria-label={`Rename card ${card.title}`}
-                          className="p-1 rounded hover:bg-gray-100 transition-colors shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleRenameCard(card.id, card.title)
-                          }}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            aria-label={`Rename card ${card.title}`}
+                            className="p-1 rounded hover:bg-gray-100 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRenameCard(card.id, card.title)
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete card ${card.title}`}
+                            className="p-1 rounded hover:bg-gray-100 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteCard(card.id, card.title)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                       {card.description && (
                         <p className="text-sm text-gray-600 mb-2">{card.description}</p>
