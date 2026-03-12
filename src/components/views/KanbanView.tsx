@@ -1,6 +1,6 @@
 import { useApp } from '../../contexts/AppContext'
-import { Plus } from 'lucide-react'
-import { createList } from '../../services/listService'
+import { Edit2, Plus, Trash2 } from 'lucide-react'
+import { createList, deleteList, updateList } from '../../services/listService'
 
 export function KanbanView() {
   const { state, dispatch } = useApp()
@@ -29,6 +29,39 @@ export function KanbanView() {
     })()
   }
 
+  const handleRenameList = (listId: string, currentTitle: string): void => {
+    const titleInput = window.prompt('Rename list', currentTitle)
+    if (titleInput === null) return
+
+    const title = titleInput.trim()
+    if (!title || title === currentTitle) return
+
+    void (async () => {
+      try {
+        const updated = await updateList(listId, { title })
+        dispatch({ type: 'UPDATE_LIST', payload: updated })
+      } catch (error) {
+        console.error('Failed to rename list:', error)
+        window.alert('Could not rename list. Please try again.')
+      }
+    })()
+  }
+
+  const handleDeleteList = (listId: string, title: string): void => {
+    const confirmed = window.confirm(`Delete list "${title}"? This will also remove its cards.`)
+    if (!confirmed) return
+
+    void (async () => {
+      try {
+        await deleteList(listId)
+        dispatch({ type: 'DELETE_LIST', payload: listId })
+      } catch (error) {
+        console.error('Failed to delete list:', error)
+        window.alert('Could not delete list. Please try again.')
+      }
+    })()
+  }
+
   if (!state.currentBoard) {
     return (
       <div className="p-8 text-center">
@@ -50,7 +83,27 @@ export function KanbanView() {
         <div className="flex gap-6 min-w-max">
           {state.lists.map((list) => (
             <div key={list.id} className="w-72 bg-gray-100 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">{list.title}</h3>
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <h3 className="font-semibold text-gray-900 truncate">{list.title}</h3>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    aria-label={`Rename list ${list.title}`}
+                    className="p-1 rounded hover:bg-gray-200 transition-colors"
+                    onClick={() => handleRenameList(list.id, list.title)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete list ${list.title}`}
+                    className="p-1 rounded hover:bg-gray-200 transition-colors"
+                    onClick={() => handleDeleteList(list.id, list.title)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
               
               <div className="space-y-3">
                 {state.cards

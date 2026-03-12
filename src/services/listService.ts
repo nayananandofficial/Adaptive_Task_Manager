@@ -45,3 +45,40 @@ export async function createList(board_id: string, title: string): Promise<List>
   return data
 }
 
+export async function updateList(
+  listId: string,
+  updates: Partial<Pick<List, 'title' | 'position'>>
+): Promise<List> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const { data, error } = await supabase
+    .from('lists')
+    .update(updates)
+    .eq('id', listId)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function deleteList(listId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const { error } = await supabase
+    .from('lists')
+    .delete()
+    .eq('id', listId)
+
+  if (error) {
+    throw error
+  }
+}
+
