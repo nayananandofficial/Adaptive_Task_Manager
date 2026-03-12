@@ -3,6 +3,7 @@ import type { Database } from '../lib/database.types'
 import { useAuth } from './AuthContext'
 import { getBoards } from '../services/boardService'
 import { getLists } from '../services/listService'
+import { getCards } from '../services/cardService'
 
 type Board = Database['public']['Tables']['boards']['Row']
 type List = Database['public']['Tables']['lists']['Row']
@@ -159,24 +160,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const boardId = state.currentBoard?.id
     if (!boardId) {
       dispatch({ type: 'SET_LISTS', payload: [] })
+      dispatch({ type: 'SET_CARDS', payload: [] })
       return () => {
         isActive = false
       }
     }
 
     dispatch({ type: 'SET_LISTS', payload: [] })
+    dispatch({ type: 'SET_CARDS', payload: [] })
 
-    const loadLists = async (): Promise<void> => {
+    const loadListsAndCards = async (): Promise<void> => {
       try {
         const lists = await getLists(boardId)
         if (!isActive) return
         dispatch({ type: 'SET_LISTS', payload: lists })
+
+        const cardGroups = await Promise.all(lists.map((list) => getCards(list.id)))
+        if (!isActive) return
+        dispatch({ type: 'SET_CARDS', payload: cardGroups.flat() })
       } catch (error) {
-        console.error('Failed to load lists:', error)
+        console.error('Failed to load lists/cards:', error)
       }
     }
 
-    void loadLists()
+    void loadListsAndCards()
 
     return () => {
       isActive = false
