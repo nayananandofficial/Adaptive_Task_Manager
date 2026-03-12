@@ -1,6 +1,7 @@
 import { useApp } from '../../contexts/AppContext'
 import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { createList, deleteList, updateList } from '../../services/listService'
+import { createCard } from '../../services/cardService'
 
 export function KanbanView() {
   const { state, dispatch } = useApp()
@@ -58,6 +59,24 @@ export function KanbanView() {
       } catch (error) {
         console.error('Failed to delete list:', error)
         window.alert('Could not delete list. Please try again.')
+      }
+    })()
+  }
+
+  const handleCreateCard = (listId: string): void => {
+    const titleInput = window.prompt('Card title')
+    if (titleInput === null) return
+
+    const title = titleInput.trim()
+    if (!title) return
+
+    void (async () => {
+      try {
+        const card = await createCard(listId, title)
+        dispatch({ type: 'ADD_CARD', payload: card })
+      } catch (error) {
+        console.error('Failed to create card:', error)
+        window.alert('Could not create card. Please try again.')
       }
     })()
   }
@@ -138,9 +157,13 @@ export function KanbanView() {
                   ))}
               </div>
 
-              <button className="w-full mt-3 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2">
+              <button
+                type="button"
+                className="w-full mt-3 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+                onClick={() => handleCreateCard(list.id)}
+              >
                 <Plus className="h-4 w-4" />
-                Add a card
+                Add card
               </button>
             </div>
           ))}
