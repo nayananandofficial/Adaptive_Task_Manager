@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import { getBoards } from '../services/boardService'
 import { getLists } from '../services/listService'
 import { getCards } from '../services/cardService'
+import { getSubtasks } from '../services/subtaskService'
 
 export const BOARD_STORAGE_KEY = 'adaptive-task-manager-current-board-id'
 
@@ -229,6 +230,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isActive = false
     }
   }, [state.currentBoard?.id])
+
+  useEffect(() => {
+    let isActive = true
+    const cardId = state.selectedCard?.id
+    
+    if (!cardId) {
+      dispatch({ type: 'SET_SUBTASKS', payload: [] })
+      return () => {
+        isActive = false
+      }
+    }
+    
+    const loadSubtasks = async (): Promise<void> => {
+      try {
+        const subtasks = await getSubtasks(cardId)
+        if (!isActive) return
+        dispatch({ type: 'SET_SUBTASKS', payload: subtasks })
+      } catch (error) {
+        console.error('Failed to load subtasks:', error)
+      }
+    }
+    void loadSubtasks()
+    return () => {
+      isActive = false
+    }
+  }, [state.selectedCard?.id])
+
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
