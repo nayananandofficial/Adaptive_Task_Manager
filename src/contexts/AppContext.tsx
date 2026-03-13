@@ -108,12 +108,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         cards: state.cards.map(card =>
           card.id === action.payload.id ? action.payload : card
-        )
+        ),
+        selectedCard: state.selectedCard?.id === action.payload.id ? action.payload : state.selectedCard
       }
     case 'DELETE_CARD':
       return {
         ...state,
-        cards: state.cards.filter(card => card.id !== action.payload)
+        cards: state.cards.filter(card => card.id !== action.payload),
+        selectedCard: state.selectedCard?.id === action.payload ? null : state.selectedCard
       }
     default:
       return state

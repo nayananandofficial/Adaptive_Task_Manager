@@ -233,6 +233,7 @@ export function KanbanView() {
                     <div
                       key={card.id}
                       className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => dispatch({ type: 'SET_SELECTED_CARD', payload: card })}
                       onDoubleClick={() => handleEditCardDescription(card.id, card.description)}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
