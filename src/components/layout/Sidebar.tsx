@@ -1,4 +1,4 @@
-import { useApp } from '../../contexts/AppContext'
+import { useApp, BOARD_STORAGE_KEY } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { createBoard, deleteBoard, updateBoard } from '../../services/boardService'
 import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2, Edit2 } from 'lucide-react'
@@ -6,6 +6,11 @@ import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2, Edit2 } from '
 export function Sidebar() {
   const { state, dispatch } = useApp()
   const { user } = useAuth()
+
+  const handleSelectBoard = (board: { id: string }): void => {
+    dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
+    localStorage.setItem(BOARD_STORAGE_KEY, board.id)
+  }
 
   const handleCreateBoard = async (): Promise<void> => {
     const titleInput = window.prompt('Enter board title') //this is fine for testing , but should be replaced with a proper modal in production (eg. CreateBoardModal). Create Board button → opens modal → user enters title and clicks "Create" → modal calls handleCreateBoard with title as argument. This way we can also add more fields in the future (eg. color, description, etc.) without changing the function signature. 
@@ -96,7 +101,7 @@ export function Sidebar() {
                 }`}
               >
                 <button
-                  onClick={() => dispatch({ type: 'SET_CURRENT_BOARD', payload: board })}
+                  onClick={() => handleSelectBoard(board)}
                   className="flex-1 flex items-center gap-2 px-3 py-2 min-w-0"
                 >
                   <div
@@ -145,6 +150,9 @@ export function Sidebar() {
                       try {
                         await deleteBoard(board.id)
                         dispatch({ type: 'DELETE_BOARD', payload: board.id })
+                        if (state.currentBoard?.id === board.id) {
+                          localStorage.removeItem(BOARD_STORAGE_KEY)
+                        }
                       } catch (error) {
                         console.error('Failed to delete board:', error)
                         window.alert('Could not delete board. Please try again.')

@@ -5,6 +5,8 @@ import { getBoards } from '../services/boardService'
 import { getLists } from '../services/listService'
 import { getCards } from '../services/cardService'
 
+export const BOARD_STORAGE_KEY = 'adaptive-task-manager-current-board-id'
+
 type Board = Database['public']['Tables']['boards']['Row']
 type List = Database['public']['Tables']['lists']['Row']
 type Card = Database['public']['Tables']['cards']['Row']
@@ -142,6 +144,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const boards = await getBoards(user.id) //currently when the app loads this function is fine because the board amount is small, In the future you might also load: lists and cards here, or implement pagination if the user has a lot of boards. For now we can just load all boards and filter them in the UI, but if performance becomes an issue we can add pagination or load lists/cards on demand when a board is selected.
         if (!isActive) return
         dispatch({ type: 'SET_BOARDS', payload: boards })
+
+        const savedBoardId = localStorage.getItem(BOARD_STORAGE_KEY)
+        if (savedBoardId) {
+          const board = boards.find((b) => b.id === savedBoardId)
+          if (board) {
+            dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
+          }
+        }
       } catch (error) {
         console.error('Failed to load boards:', error)
       }
