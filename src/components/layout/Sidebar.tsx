@@ -2,15 +2,18 @@ import { useApp, BOARD_STORAGE_KEY } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { createBoard, deleteBoard, updateBoard } from '../../services/boardService'
 import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2, Edit2 } from 'lucide-react'
+import type { Database } from '../../lib/database.types'
+
+type Board = Database['public']['Tables']['boards']['Row']
 
 export function Sidebar() {
   const { state, dispatch } = useApp()
   const { user } = useAuth()
 
-  const handleSelectBoard = (board: { id: string }): void => {
-    dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
-    localStorage.setItem(BOARD_STORAGE_KEY, board.id)
-  }
+    const handleSelectBoard = (board: Board): void => {
+      dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
+      localStorage.setItem(BOARD_STORAGE_KEY, board.id)
+    }
 
   const handleCreateBoard = async (): Promise<void> => {
     const titleInput = window.prompt('Enter board title') //this is fine for testing , but should be replaced with a proper modal in production (eg. CreateBoardModal). Create Board button → opens modal → user enters title and clicks "Create" → modal calls handleCreateBoard with title as argument. This way we can also add more fields in the future (eg. color, description, etc.) without changing the function signature. 

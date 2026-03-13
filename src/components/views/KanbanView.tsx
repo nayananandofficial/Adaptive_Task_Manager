@@ -131,6 +131,36 @@ export function KanbanView() {
     })()
   }
 
+  const handleEditCardDueDate = (cardId: string, currentDueDate: string | null): void => {
+    const defaultVal = currentDueDate
+      ? new Date(currentDueDate).toISOString().split('T')[0]
+      : ''
+    const input = window.prompt('Due date (DD-MM-YYYY). Leave empty to remove.', defaultVal)
+    if (input === null) return
+
+    const trimmed = input.trim()
+    const due_date = trimmed ? (() => {
+      const d = new Date(trimmed)
+      if (Number.isNaN(d.getTime())) return undefined
+      return d.toISOString().split('T')[0]
+    })() : null
+
+    if (trimmed && due_date === undefined) {
+      window.alert('Invalid date format. Use DD-MM-YYYY.')
+      return
+    }
+
+    void (async () => {
+      try {
+        const updated = await updateCard(cardId, { due_date })
+        dispatch({ type: 'UPDATE_CARD', payload: updated })
+      } catch (error) {
+        console.error('Failed to update due date:', error)
+        window.alert('Could not update due date. Please try again.')
+      }
+    })()
+  }
+
   if (!state.currentBoard) {
     return (
       <div className="p-8 text-center">
@@ -225,11 +255,18 @@ export function KanbanView() {
                           ))}
                         </div>
                       )}
-                      {card.due_date && (
-                        <p className="text-xs text-gray-500">
-                          Due: {new Date(card.due_date).toLocaleDateString()}
-                        </p>
-                      )}
+                      <button
+                        type="button"
+                        className="text-xs text-gray-500 hover:text-gray-700 hover:underline text-left"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditCardDueDate(card.id, card.due_date)
+                        }}
+                      >
+                        {card.due_date
+                          ? `Due: ${new Date(card.due_date).toLocaleDateString()}`
+                          : 'Add due date'}
+                      </button>
                     </div>
                   ))}
               </div>
