@@ -114,6 +114,23 @@ export function KanbanView() {
     })()
   }
 
+  const handleEditCardDescription = (cardId: string, currentDescription: string | null): void => {
+    const descriptionInput = window.prompt('Edit description', currentDescription ?? '')
+    if (descriptionInput === null) return
+
+    const description = descriptionInput.trim() || null
+
+    void (async () => {
+      try {
+        const updated = await updateCard(cardId, { description })
+        dispatch({ type: 'UPDATE_CARD', payload: updated })
+      } catch (error) {
+        console.error('Failed to update card description:', error)
+        window.alert('Could not update description. Please try again.')
+      }
+    })()
+  }
+
   if (!state.currentBoard) {
     return (
       <div className="p-8 text-center">
@@ -164,6 +181,7 @@ export function KanbanView() {
                     <div
                       key={card.id}
                       className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                      onDoubleClick={() => handleEditCardDescription(card.id, card.description)}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="font-medium text-gray-900">{card.title}</h4>
