@@ -131,6 +131,28 @@ export function KanbanView() {
     })()
   }
 
+  const handleEditCardLabels = (cardId: string, currentLabels: string[]): void => {
+    const input = window.prompt('Labels (comma-separated). Edit or remove to change.', currentLabels.join(', '))
+    if (input === null) return
+
+    const labels = [...new Set(
+      input
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    )]
+
+    void (async () => {
+      try {
+        const updated = await updateCard(cardId, { labels })
+        dispatch({ type: 'UPDATE_CARD', payload: updated })
+      } catch (error) {
+        console.error('Failed to update labels:', error)
+        window.alert('Could not update labels. Please try again.')
+      }
+    })()
+  }
+
   const handleEditCardDueDate = (cardId: string, currentDueDate: string | null): void => {
     const defaultVal = currentDueDate
       ? new Date(currentDueDate).toISOString().split('T')[0]
@@ -243,18 +265,31 @@ export function KanbanView() {
                       {card.description && (
                         <p className="text-sm text-gray-600 mb-2">{card.description}</p>
                       )}
-                      {card.labels.length > 0 && (
-                        <div className="flex gap-1 mb-2">
-                          {card.labels.map((label, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded"
-                            >
-                              {label}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {(card.labels ?? []).map((label, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEditCardLabels(card.id, card.labels ?? [])
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditCardLabels(card.id, card.labels ?? [])
+                          }}
+                        >
+                          {(card.labels ?? []).length > 0 ? '+ Add label' : 'Add label'}
+                        </button>
+                      </div>
                       <button
                         type="button"
                         className="text-xs text-gray-500 hover:text-gray-700 hover:underline text-left"
