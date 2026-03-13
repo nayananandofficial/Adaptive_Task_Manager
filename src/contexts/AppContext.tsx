@@ -10,12 +10,14 @@ export const BOARD_STORAGE_KEY = 'adaptive-task-manager-current-board-id'
 type Board = Database['public']['Tables']['boards']['Row']
 type List = Database['public']['Tables']['lists']['Row']
 type Card = Database['public']['Tables']['cards']['Row']
+type Subtask = Database['public']['Tables']['subtasks']['Row']
 
 interface AppState {
   currentBoard: Board | null
   boards: Board[]
   lists: List[]
   cards: Card[]
+  subtasks: Subtask[]
   selectedCard: Card | null
   currentView: 'kanban' | 'calendar' | 'timeline' | 'list'
   sidebarOpen: boolean
@@ -27,6 +29,7 @@ type AppAction =
   | { type: 'SET_BOARDS'; payload: Board[] }
   | { type: 'SET_LISTS'; payload: List[] }
   | { type: 'SET_CARDS'; payload: Card[] }
+  | { type: 'SET_SUBTASKS'; payload: Subtask[] }
   | { type: 'SET_SELECTED_CARD'; payload: Card | null }
   | { type: 'SET_CURRENT_VIEW'; payload: AppState['currentView'] }
   | { type: 'TOGGLE_SIDEBAR' }
@@ -40,12 +43,16 @@ type AppAction =
   | { type: 'ADD_CARD'; payload: Card }
   | { type: 'UPDATE_CARD'; payload: Card }
   | { type: 'DELETE_CARD'; payload: string }
+  | { type: 'ADD_SUBTASK'; payload: Subtask }
+  | { type: 'UPDATE_SUBTASK'; payload: Subtask }
+  | { type: 'DELETE_SUBTASK'; payload: string }
 
 const initialState: AppState = {
   currentBoard: null,
   boards: [],
   lists: [],
   cards: [],
+  subtasks: [],
   selectedCard: null,
   currentView: 'kanban',
   sidebarOpen: true,
@@ -62,6 +69,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, lists: action.payload }
     case 'SET_CARDS':
       return { ...state, cards: action.payload }
+    case 'SET_SUBTASKS':
+      return { ...state, subtasks: action.payload }
     case 'SET_SELECTED_CARD':
       return { ...state, selectedCard: action.payload }
     case 'SET_CURRENT_VIEW':
@@ -116,6 +125,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         cards: state.cards.filter(card => card.id !== action.payload),
         selectedCard: state.selectedCard?.id === action.payload ? null : state.selectedCard
+      }
+    case 'ADD_SUBTASK':
+      return { ...state, subtasks: [...state.subtasks, action.payload] }
+    case 'UPDATE_SUBTASK':
+      return {
+        ...state,
+        subtasks: state.subtasks.map(subtask =>
+          subtask.id === action.payload.id ? action.payload : subtask
+        )
+      }
+    case 'DELETE_SUBTASK':
+      return {
+        ...state,
+        subtasks: state.subtasks.filter(subtask => subtask.id !== action.payload)
       }
     default:
       return state
