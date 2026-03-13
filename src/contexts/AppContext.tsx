@@ -234,14 +234,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isActive = true
     const cardId = state.selectedCard?.id
-    
+
     if (!cardId) {
       dispatch({ type: 'SET_SUBTASKS', payload: [] })
       return () => {
         isActive = false
       }
     }
-    
+
+    dispatch({ type: 'SET_SUBTASKS', payload: [] })
+
     const loadSubtasks = async (): Promise<void> => {
       try {
         const subtasks = await getSubtasks(cardId)
@@ -251,7 +253,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error('Failed to load subtasks:', error)
       }
     }
+
     void loadSubtasks()
+
     return () => {
       isActive = false
     }
