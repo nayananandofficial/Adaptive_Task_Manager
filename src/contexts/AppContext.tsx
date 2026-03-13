@@ -16,6 +16,7 @@ interface AppState {
   boards: Board[]
   lists: List[]
   cards: Card[]
+  selectedCard: Card | null
   currentView: 'kanban' | 'calendar' | 'timeline' | 'list'
   sidebarOpen: boolean
   focusToday: string | null
@@ -26,6 +27,7 @@ type AppAction =
   | { type: 'SET_BOARDS'; payload: Board[] }
   | { type: 'SET_LISTS'; payload: List[] }
   | { type: 'SET_CARDS'; payload: Card[] }
+  | { type: 'SET_SELECTED_CARD'; payload: Card | null }
   | { type: 'SET_CURRENT_VIEW'; payload: AppState['currentView'] }
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'SET_FOCUS_TODAY'; payload: string | null }
@@ -44,6 +46,7 @@ const initialState: AppState = {
   boards: [],
   lists: [],
   cards: [],
+  selectedCard: null,
   currentView: 'kanban',
   sidebarOpen: true,
   focusToday: null
@@ -59,6 +62,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, lists: action.payload }
     case 'SET_CARDS':
       return { ...state, cards: action.payload }
+    case 'SET_SELECTED_CARD':
+      return { ...state, selectedCard: action.payload }
     case 'SET_CURRENT_VIEW':
       return { ...state, currentView: action.payload }
     case 'TOGGLE_SIDEBAR':
