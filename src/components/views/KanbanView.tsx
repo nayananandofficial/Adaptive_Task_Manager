@@ -1,7 +1,10 @@
 import { useApp } from '../../contexts/AppContext'
 import { Edit2, Plus, Trash2 } from 'lucide-react'
+import { DndContext, closestCenter } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { createList, deleteList, updateList } from '../../services/listService'
 import { createCard, deleteCard, updateCard } from '../../services/cardService'
+import { SortableCard } from '../cards/SortableCard'
 
 export function KanbanView() {
   const { state, dispatch } = useApp()
@@ -200,133 +203,82 @@ export function KanbanView() {
         )}
       </div>
 
-      <div className="flex-1 p-6 overflow-x-auto">
-        <div className="flex gap-6 min-w-max">
-          {state.lists.map((list) => (
-            <div key={list.id} className="w-72 bg-gray-100 rounded-lg p-4">
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <h3 className="font-semibold text-gray-900 truncate">{list.title}</h3>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    aria-label={`Rename list ${list.title}`}
-                    className="p-1 rounded hover:bg-gray-200 transition-colors"
-                    onClick={() => handleRenameList(list.id, list.title)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Delete list ${list.title}`}
-                    className="p-1 rounded hover:bg-gray-200 transition-colors"
-                    onClick={() => handleDeleteList(list.id, list.title)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {state.cards
-                  .filter(card => card.list_id === list.id)
-                  .map((card) => (
-                    <div
-                      key={card.id}
-                      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => dispatch({ type: 'SET_SELECTED_CARD', payload: card })}
-                      onDoubleClick={() => handleEditCardDescription(card.id, card.description)}
+      <DndContext collisionDetection={closestCenter}>
+        <div className="flex-1 p-6 overflow-x-auto">
+          <div className="flex gap-6 min-w-max">
+            {state.lists.map((list) => (
+              <div key={list.id} className="w-72 bg-gray-100 rounded-lg p-4">
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <h3 className="font-semibold text-gray-900 truncate">{list.title}</h3>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      aria-label={`Rename list ${list.title}`}
+                      className="p-1 rounded hover:bg-gray-200 transition-colors"
+                      onClick={() => handleRenameList(list.id, list.title)}
                     >
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="font-medium text-gray-900">{card.title}</h4>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            aria-label={`Rename card ${card.title}`}
-                            className="p-1 rounded hover:bg-gray-100 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleRenameCard(card.id, card.title)
-                            }}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Delete card ${card.title}`}
-                            className="p-1 rounded hover:bg-gray-100 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteCard(card.id, card.title)
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      {card.description && (
-                        <p className="text-sm text-gray-600 mb-2">{card.description}</p>
-                      )}
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {(card.labels ?? []).map((label, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleEditCardLabels(card.id, card.labels ?? [])
-                            }}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEditCardLabels(card.id, card.labels ?? [])
-                          }}
-                        >
-                          {(card.labels ?? []).length > 0 ? '+ Add label' : 'Add label'}
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        className="text-xs text-gray-500 hover:text-gray-700 hover:underline text-left"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEditCardDueDate(card.id, card.due_date)
-                        }}
-                      >
-                        {card.due_date
-                          ? `Due: ${new Date(card.due_date).toLocaleDateString()}`
-                          : 'Add due date'}
-                      </button>
-                    </div>
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete list ${list.title}`}
+                      className="p-1 rounded hover:bg-gray-200 transition-colors"
+                      onClick={() => handleDeleteList(list.id, list.title)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                {(() => {
+                  const listCards = state.cards
+                    .filter((card) => card.list_id === list.id)
+                    .slice()
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+
+                  return (
+                    <SortableContext
+                      items={listCards.map((card) => card.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                  <div className="space-y-3">
+                  {listCards.map((card) => (
+                    <SortableCard
+                      key={card.id}
+                      card={card}
+                      onSelect={() => dispatch({ type: 'SET_SELECTED_CARD', payload: card })}
+                      onEditDescription={() => handleEditCardDescription(card.id, card.description)}
+                      onRename={() => handleRenameCard(card.id, card.title)}
+                      onDelete={() => handleDeleteCard(card.id, card.title)}
+                      onEditLabels={() => handleEditCardLabels(card.id, card.labels ?? [])}
+                      onEditDueDate={() => handleEditCardDueDate(card.id, card.due_date)}
+                    />
                   ))}
+                </div>
+                    </SortableContext>
+                  )
+                })()}
+                <button
+                  type="button"
+                  className="w-full mt-3 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+                  onClick={() => handleCreateCard(list.id)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add card
+                </button>
               </div>
+            ))}
 
-              <button
-                type="button"
-                className="w-full mt-3 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
-                onClick={() => handleCreateCard(list.id)}
-              >
-                <Plus className="h-4 w-4" />
-                Add card
-              </button>
-            </div>
-          ))}
-
-          <button
-            onClick={handleCreateList}
-            className="w-72 h-fit bg-gray-100 hover:bg-gray-200 rounded-lg p-4 transition-colors flex items-center gap-2 text-gray-600"
-          >
-            <Plus className="h-4 w-4" />
-            Add another list
-          </button>
+            <button
+              onClick={handleCreateList}
+              className="w-72 h-fit bg-gray-100 hover:bg-gray-200 rounded-lg p-4 transition-colors flex items-center gap-2 text-gray-600"
+            >
+              <Plus className="h-4 w-4" />
+              Add another list
+            </button>
+          </div>
         </div>
-      </div>
+      </DndContext>
     </div>
   )
 }
