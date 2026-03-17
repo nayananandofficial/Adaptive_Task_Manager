@@ -82,3 +82,25 @@ export async function deleteCard(cardId: string): Promise<void> {
   }
 }
 
+export async function updateCardsPositions(
+  updates: Array<Pick<Card, 'id' | 'list_id' | 'position'>>
+): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  if (updates.length === 0) return
+
+  for (const { id, list_id, position } of updates) {
+    const { error } = await supabase
+      .from('cards')
+      .update({ list_id, position })
+      .eq('id', id)
+
+    if (error) {
+      throw error
+    }
+  }
+}
+
+

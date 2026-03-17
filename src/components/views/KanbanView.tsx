@@ -3,7 +3,7 @@ import { Edit2, Plus, Trash2 } from 'lucide-react'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { createList, deleteList, updateList } from '../../services/listService'
-import { createCard, deleteCard, updateCard } from '../../services/cardService'
+import { createCard, deleteCard, updateCard, updateCardsPositions } from '../../services/cardService'
 import { SortableCard } from '../cards/SortableCard'
 
 export function KanbanView() {
@@ -34,6 +34,19 @@ export function KanbanView() {
 
       const newOrder = arrayMove(listCards, oldIndex, newIndex).map((c) => c.id)
       dispatch({ type: 'REORDER_CARDS_IN_LIST', payload: { listId, cardIds: newOrder } })
+      void (async () => {
+        try {
+          await updateCardsPositions(
+            newOrder.map((id, index) => ({
+              id,
+              list_id: listId,
+              position: index
+            }))
+          )
+        } catch (error) {
+          console.error('Failed to persist card order:', error)
+        }
+      })()
       return
     }
 
@@ -58,10 +71,31 @@ export function KanbanView() {
     const nextToCards = toCards.slice()
     nextToCards.splice(insertIndex, 0, activeId)
 
-    dispatch({
+    const payload = {
       type: 'MOVE_CARD',
       payload: { cardId: activeId, fromListId, toListId, fromCardIds: fromCards, toCardIds: nextToCards }
-    })
+    } as const
+
+    dispatch(payload)
+
+    void (async () => {
+      try {
+        await updateCardsPositions([
+          ...fromCards.map((id, index) => ({
+            id,
+            list_id: fromListId,
+            position: index
+          })),
+          ...nextToCards.map((id, index) => ({
+            id,
+            list_id: toListId,
+            position: index
+          }))
+        ])
+      } catch (error) {
+        console.error('Failed to persist cross-list move:', error)
+      }
+    })()
   }
 
   const handleCreateList = (): void => {
@@ -300,7 +334,7 @@ export function KanbanView() {
                   {listCards.map((card) => (
                     <SortableCard
                       key={card.id}
-                      card={card}
+                      card={card} 
                       onSelect={() => dispatch({ type: 'SET_SELECTED_CARD', payload: card })}
                       onEditDescription={() => handleEditCardDescription(card.id, card.description)}
                       onRename={() => handleRenameCard(card.id, card.title)}
