@@ -44,6 +44,8 @@ type AppAction =
   | { type: 'ADD_CARD'; payload: Card }
   | { type: 'UPDATE_CARD'; payload: Card }
   | { type: 'DELETE_CARD'; payload: string }
+  | { type: 'REORDER_CARDS_IN_LIST'; payload: { listId: string; cardIds: string[] } }
+  | { type: 'MOVE_CARD'; payload: { cardId: string; fromListId: string; toListId: string; fromCardIds: string[]; toCardIds: string[] } }
   | { type: 'ADD_SUBTASK'; payload: Subtask }
   | { type: 'UPDATE_SUBTASK'; payload: Subtask }
   | { type: 'DELETE_SUBTASK'; payload: string }
@@ -127,6 +129,49 @@ function appReducer(state: AppState, action: AppAction): AppState {
         cards: state.cards.filter(card => card.id !== action.payload),
         selectedCard: state.selectedCard?.id === action.payload ? null : state.selectedCard
       }
+    case 'REORDER_CARDS_IN_LIST': {
+      const { listId, cardIds } = action.payload
+      const positionById = new Map(cardIds.map((id, idx) => [id, idx]))
+
+      return {
+        ...state,
+        cards: state.cards.map((card) => {
+          if (card.list_id !== listId) return card
+          const pos = positionById.get(card.id)
+          if (pos === undefined) return card
+          return { ...card, position: pos }
+        })
+      }
+    }
+    case 'MOVE_CARD': {
+      const { cardId, fromListId, toListId, fromCardIds, toCardIds } = action.payload
+      const fromPos = new Map(fromCardIds.map((id, idx) => [id, idx]))
+      const toPos = new Map(toCardIds.map((id, idx) => [id, idx]))
+
+      const nextCards = state.cards.map((card) => {
+        if (card.id === cardId) {
+          return { ...card, list_id: toListId, position: toPos.get(cardId) ?? card.position }
+        }
+        if (card.list_id === fromListId) {
+          const pos = fromPos.get(card.id)
+          if (pos === undefined) return card
+          return { ...card, position: pos }
+        }
+        if (card.list_id === toListId) {
+          const pos = toPos.get(card.id)
+          if (pos === undefined) return card
+          return { ...card, position: pos }
+        }
+        return card
+      })
+
+      const nextSelected =
+        state.selectedCard?.id === cardId
+          ? nextCards.find((c) => c.id === cardId) ?? state.selectedCard
+          : state.selectedCard
+
+      return { ...state, cards: nextCards, selectedCard: nextSelected }
+    }
     case 'ADD_SUBTASK':
       return { ...state, subtasks: [...state.subtasks, action.payload] }
     case 'UPDATE_SUBTASK':

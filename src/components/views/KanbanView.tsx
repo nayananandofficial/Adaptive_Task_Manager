@@ -1,13 +1,68 @@
 import { useApp } from '../../contexts/AppContext'
 import { Edit2, Plus, Trash2 } from 'lucide-react'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { createList, deleteList, updateList } from '../../services/listService'
 import { createCard, deleteCard, updateCard } from '../../services/cardService'
 import { SortableCard } from '../cards/SortableCard'
 
 export function KanbanView() {
   const { state, dispatch } = useApp()
+
+  const handleDragEnd = ({ active, over }: DragEndEvent): void => {
+    if (!over) return
+    if (active.id === over.id) return
+
+    const activeId = String(active.id)
+    const overId = String(over.id)
+
+    const activeCard = state.cards.find((c) => c.id === activeId)
+    const overCard = state.cards.find((c) => c.id === overId)
+    if (!activeCard || !overCard) return
+
+    // Same list: reorder
+    if (activeCard.list_id === overCard.list_id) {
+      const listId = activeCard.list_id
+      const listCards = state.cards
+        .filter((c) => c.list_id === listId)
+        .slice()
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+
+      const oldIndex = listCards.findIndex((c) => c.id === activeId)
+      const newIndex = listCards.findIndex((c) => c.id === overId)
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const newOrder = arrayMove(listCards, oldIndex, newIndex).map((c) => c.id)
+      dispatch({ type: 'REORDER_CARDS_IN_LIST', payload: { listId, cardIds: newOrder } })
+      return
+    }
+
+    // Cross list: remove from source, insert into destination (relative to "over" card)
+    const fromListId = activeCard.list_id
+    const toListId = overCard.list_id
+
+    const fromCards = state.cards
+      .filter((c) => c.list_id === fromListId)
+      .slice()
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .map((c) => c.id)
+      .filter((id) => id !== activeId)
+
+    const toCards = state.cards
+      .filter((c) => c.list_id === toListId)
+      .slice()
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .map((c) => c.id)
+
+    const insertIndex = Math.max(0, toCards.indexOf(overId))
+    const nextToCards = toCards.slice()
+    nextToCards.splice(insertIndex, 0, activeId)
+
+    dispatch({
+      type: 'MOVE_CARD',
+      payload: { cardId: activeId, fromListId, toListId, fromCardIds: fromCards, toCardIds: nextToCards }
+    })
+  }
 
   const handleCreateList = (): void => {
     const boardId = state.currentBoard?.id
@@ -203,7 +258,7 @@ export function KanbanView() {
         )}
       </div>
 
-      <DndContext collisionDetection={closestCenter}>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="flex-1 p-6 overflow-x-auto">
           <div className="flex gap-6 min-w-max">
             {state.lists.map((list) => (
