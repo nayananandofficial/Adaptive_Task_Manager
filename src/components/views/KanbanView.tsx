@@ -174,7 +174,6 @@ export function KanbanView() {
   }
 
   const handleRenameCard = (cardId: string, currentTitle: string): void => {
-    console.log("Rename clicked:", cardId, currentTitle)
     const titleInput = window.prompt('Rename card', currentTitle)
     if (titleInput === null) return
 
@@ -193,7 +192,6 @@ export function KanbanView() {
   }
 
   const handleDeleteCard = (cardId: string, title: string): void => {
-    console.log("Delete clicked:", cardId, title)
     const confirmed = window.confirm(`Delete card "${title}"?`)
     if (!confirmed) return
 
@@ -226,7 +224,6 @@ export function KanbanView() {
   }
 
   const handleEditCardLabels = (cardId: string, currentLabels: string[]): void => {
-    console.log("labels clicked:", cardId, currentLabels)
     const input = window.prompt('Labels (comma-separated). Edit or remove to change.', currentLabels.join(', '))
     if (input === null) return
 
@@ -249,7 +246,6 @@ export function KanbanView() {
   }
 
   const handleEditCardDueDate = (cardId: string, currentDueDate: string | null): void => {
-    console.log("due date clicked:", cardId, currentDueDate)
     const defaultVal = currentDueDate
       ? new Date(currentDueDate).toISOString().split('T')[0]
       : ''
@@ -336,7 +332,6 @@ export function KanbanView() {
                     >
                   <div className="space-y-3">
                   {listCards.map((card) => {
-                    console.log("CARD:", card);
                     return (
                     <SortableCard
                       key={card.id}
