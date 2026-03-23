@@ -42,14 +42,19 @@ export function SortableCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
       onClick={onSelect}
       onDoubleClick={onEditDescription}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
-        <h4 className="font-medium text-gray-900">{card.title}</h4>
-        <div className="flex items-center gap-1 shrink-0">
+      <div
+        {...listeners}
+        className="cursor-grab text-gray-400 hover:text-gray-600"
+      >
+        ⋮⋮
+      </div>
+      <h4 className="font-medium text-gray-900 text-left">{card.title}</h4>
+      <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             aria-label={`Rename card ${card.title}`}
