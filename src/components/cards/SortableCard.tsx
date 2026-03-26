@@ -44,7 +44,6 @@ export function SortableCard({
       {...attributes}
       className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
       onClick={onSelect}
-      onDoubleClick={onEditDescription}
     >
       <div className="flex items-start justify-between gap-2 mb-1">
       <div
@@ -80,8 +79,23 @@ export function SortableCard({
         </div>
       </div>
 
-      {card.description && (
-        <p className="text-sm text-gray-600 mb-2">{card.description}</p>
+      {card.description ? (
+        <p 
+          className="text-sm text-gray-600 mb-2"
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            onEditDescription()
+          }}>{card.description}</p>
+      ):(
+        <button
+        className='text-sm text-gray-400 hover:text-gray-600 mb-2 text-left'
+        onClick={(e) => {
+          e.stopPropagation()
+          onEditDescription()
+        }}
+        >
+          + Add Description 
+        </button>
       )}
 
       <div className="flex flex-wrap gap-1 mb-2">

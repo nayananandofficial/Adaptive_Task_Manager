@@ -207,7 +207,7 @@ export function KanbanView() {
   }
 
   const handleEditCardDescription = (cardId: string, currentDescription: string | null): void => {
-    const descriptionInput = window.prompt('Edit description', currentDescription ?? '')
+    const descriptionInput = window.prompt('Add description', currentDescription ?? '')
     if (descriptionInput === null) return
 
     const description = descriptionInput.trim() || null
