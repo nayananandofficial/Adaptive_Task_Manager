@@ -249,7 +249,7 @@ export function KanbanView() {
     const defaultVal = currentDueDate
       ? new Date(currentDueDate).toISOString().split('T')[0]
       : ''
-    const input = window.prompt('Due date (DD-MM-YYYY). Leave empty to remove.', defaultVal)
+    const input = window.prompt('Due date (YYYY-MM-DD). Leave empty to remove.', defaultVal)
     if (input === null) return
 
     const trimmed = input.trim()
@@ -260,7 +260,7 @@ export function KanbanView() {
     })() : null
 
     if (trimmed && due_date === undefined) {
-      window.alert('Invalid date format. Use DD-MM-YYYY.')
+      window.alert('Invalid date format. Use YYYY-MM-DD.')
       return
     }
 

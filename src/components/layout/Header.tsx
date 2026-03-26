@@ -1,6 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
-import { Trello, Menu, Search, Bell, User, LogOut } from 'lucide-react'
+import { Trello, Menu, User, LogOut } from 'lucide-react'
 
 export function Header() {
   const { profile, signOut } = useAuth()
@@ -22,28 +22,12 @@ export function Header() {
               <Trello className="h-6 w-6 text-white" />
             </div>
             <span className="font-semibold text-gray-900 hidden sm:block">
-              Adaptive Task Manager
+              FLUXOBOARD
             </span>
           </div>
         </div>
 
-        <div className="flex-1 max-w-md mx-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search boards, cards, and more..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-            <Bell className="h-5 w-5 text-gray-600" />
-            <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></div>
-          </button>
-
           <div className="relative group">
             <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors">
               {profile?.avatar_url ? (
@@ -65,7 +49,7 @@ export function Header() {
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="p-3 border-b border-gray-100">
                 <p className="font-medium text-gray-900">{profile?.full_name}</p>
-                <p className="text-sm text-gray-500">{profile?.email}</p>
+                <p className="text-sm text-gray-500 truncate">{profile?.email}</p>
                 <p className="text-xs text-blue-600 capitalize mt-1">{profile?.role}</p>
               </div>
               <button
