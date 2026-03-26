@@ -21,12 +21,6 @@ export function Dashboard() {
     switch (state.currentView) {
       case 'kanban':
         return <KanbanView />
-      case 'calendar':
-        return <div className="p-8">Calendar view coming soon...</div>
-      case 'timeline':
-        return <div className="p-8">Timeline view coming soon...</div>
-      case 'list':
-        return <div className="p-8">List view coming soon...</div>
       default:
         return <KanbanView />
     }

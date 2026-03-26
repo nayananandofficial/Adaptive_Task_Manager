@@ -1,7 +1,7 @@
 import { useApp, BOARD_STORAGE_KEY } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { createBoard, deleteBoard, updateBoard } from '../../services/boardService'
-import { Plus, Home, Calendar, BarChart3, List, Settings, Trash2, Edit2 } from 'lucide-react'
+import { Plus, Home, Trash2, Edit2 } from 'lucide-react'
 import type { Database } from '../../lib/database.types'
 
 type Board = Database['public']['Tables']['boards']['Row']
@@ -40,9 +40,6 @@ export function Sidebar() {
 
   const views = [
     { id: 'kanban' as const, label: 'Kanban', icon: Home },
-    { id: 'calendar' as const, label: 'Calendar', icon: Calendar },
-    { id: 'timeline' as const, label: 'Timeline', icon: BarChart3 },
-    { id: 'list' as const, label: 'List', icon: List },
   ]
 
   return (
@@ -169,13 +166,6 @@ export function Sidebar() {
             ))
           )}
         </div>
-      </div>
-
-      <div className="mt-auto p-4 border-t border-gray-200">
-        <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <Settings className="h-4 w-4" />
-          Settings
-        </button>
       </div>
     </aside>
   )
