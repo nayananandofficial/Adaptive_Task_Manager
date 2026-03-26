@@ -6,6 +6,13 @@ export function Header() {
   const { profile, signOut } = useAuth()
   const { dispatch } = useApp()
 
+  const handleLogout = async () => {
+      await signOut()
+
+    dispatch({ type: 'RESET_STATE' })
+    localStorage.removeItem('currentBoardId')
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
@@ -53,7 +60,7 @@ export function Header() {
                 <p className="text-xs text-blue-600 capitalize mt-1">{profile?.role}</p>
               </div>
               <button
-                onClick={signOut}
+                onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <LogOut className="h-4 w-4" />

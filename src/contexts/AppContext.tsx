@@ -20,7 +20,7 @@ interface AppState {
   cards: Card[]
   subtasks: Subtask[]
   selectedCard: Card | null
-  currentView: 'kanban' | 'calendar' | 'timeline' | 'list'
+  currentView: 'kanban'
   sidebarOpen: boolean
   focusToday: string | null
 }
@@ -49,6 +49,7 @@ type AppAction =
   | { type: 'ADD_SUBTASK'; payload: Subtask }
   | { type: 'UPDATE_SUBTASK'; payload: Subtask }
   | { type: 'DELETE_SUBTASK'; payload: string }
+  | { type: 'RESET_STATE'}
 
 const initialState: AppState = {
   currentBoard: null,
@@ -186,6 +187,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         subtasks: state.subtasks.filter(subtask => subtask.id !== action.payload)
       }
+      case 'RESET_STATE':
+        return { ...initialState }
     default:
       return state
   }
