@@ -45,6 +45,37 @@ export async function createCard(list_id: string, title: string): Promise<Card> 
   return data
 }
 
+export async function createCardWithOptions(
+  list_id: string,
+  title: string,
+  options?: Partial<Pick<Card, 'description' | 'due_date' | 'position' | 'labels'>>
+): Promise<Card> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const insertPayload: CardInsert = {
+    list_id,
+    title,
+    description: options?.description,
+    due_date: options?.due_date,
+    position: options?.position,
+    labels: options?.labels
+  }
+
+  const { data, error } = await supabase
+    .from('cards')
+    .insert(insertPayload)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 export async function updateCard(
   cardId: string,
   updates: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'position' | 'labels' | 'list_id'>>

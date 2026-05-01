@@ -44,6 +44,35 @@ export async function createBoard(title: string, user_id: string): Promise<Board
 
   return data
 }
+export async function createBoardWithOptions(
+  title: string,
+  user_id: string,
+  options?: Partial<Pick<Board, 'description' | 'color' | 'position'>>
+): Promise<Board> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const insertPayload: BoardInsert = {
+    title,
+    user_id,
+    description: options?.description,
+    color: options?.color,
+    position: options?.position
+  }
+
+  const { data, error } = await supabase
+    .from('boards')
+    .insert(insertPayload)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
 
 export async function deleteBoard(boardId: string): Promise<void> {
   if (!supabase) {

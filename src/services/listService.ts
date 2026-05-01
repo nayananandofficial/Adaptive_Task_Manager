@@ -45,6 +45,34 @@ export async function createList(board_id: string, title: string): Promise<List>
   return data
 }
 
+export async function createListWithOptions(
+  board_id: string,
+  title: string,
+  options?: Partial<Pick<List, 'position'>>
+): Promise<List> {
+  if (!supabase) {
+    throw new Error('Supabase client is not configured')
+  }
+
+  const insertPayload: ListInsert = {
+    board_id,
+    title,
+    position: options?.position
+  }
+
+  const { data, error } = await supabase
+    .from('lists')
+    .insert(insertPayload)
+    .select('*')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 export async function updateList(
   listId: string,
   updates: Partial<Pick<List, 'title' | 'position'>>

@@ -27,6 +27,7 @@ import {
 } from "../../services/cardService";
 import { DragOverlayCard, SortableCard } from "../cards/SortableCard";
 import type { Database } from "../../lib/database.types";
+import { Dialog, PromptDialog } from "../ui/Dialog";
 
 type List = Database["public"]["Tables"]["lists"]["Row"];
 type Card = Database["public"]["Tables"]["cards"]["Row"];
@@ -51,18 +52,15 @@ type DragMutation =
 interface KanbanListColumnProps {
   list: List;
   cards: Card[];
-  onRenameList: (listId: string, currentTitle: string) => void;
-  onDeleteList: (listId: string, title: string) => void;
+  onRenameList: (listId: string) => void;
+  onDeleteList: (listId: string) => void;
   onCreateCard: (listId: string) => void;
   onSelectCard: (card: Card) => void;
-  onEditCardDescription: (
-    cardId: string,
-    currentDescription: string | null,
-  ) => void;
-  onRenameCard: (cardId: string, currentTitle: string) => void;
-  onDeleteCard: (cardId: string, title: string) => void;
-  onEditCardLabels: (cardId: string, currentLabels: string[]) => void;
-  onEditCardDueDate: (cardId: string, currentDueDate: string | null) => void;
+  onEditCardDescription: (cardId: string) => void;
+  onRenameCard: (cardId: string) => void;
+  onDeleteCard: (cardId: string) => void;
+  onEditCardLabels: (cardId: string) => void;
+  onEditCardDueDate: (cardId: string) => void;
 }
 
 function sortCardsByPosition(cards: Card[]): Card[] {
@@ -254,7 +252,7 @@ function KanbanListColumn({
             type="button"
             aria-label={`Rename list ${list.title}`}
             className="rounded p-1 transition-colors hover:bg-gray-200"
-            onClick={() => onRenameList(list.id, list.title)}
+            onClick={() => onRenameList(list.id)}
           >
             <Edit2 className="h-4 w-4" />
           </button>
@@ -262,7 +260,7 @@ function KanbanListColumn({
             type="button"
             aria-label={`Delete list ${list.title}`}
             className="rounded p-1 transition-colors hover:bg-gray-200"
-            onClick={() => onDeleteList(list.id, list.title)}
+            onClick={() => onDeleteList(list.id)}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -273,21 +271,24 @@ function KanbanListColumn({
         items={listCards.map((card) => card.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="min-h-24 space-y-3">
+        <div className="space-y-3">
           {listCards.map((card) => (
             <SortableCard
               key={card.id}
               card={card}
               onSelect={() => onSelectCard(card)}
-              onEditDescription={() =>
-                onEditCardDescription(card.id, card.description)
-              }
-              onRename={() => onRenameCard(card.id, card.title)}
-              onDelete={() => onDeleteCard(card.id, card.title)}
-              onEditLabels={() => onEditCardLabels(card.id, card.labels ?? [])}
-              onEditDueDate={() => onEditCardDueDate(card.id, card.due_date)}
+              onEditDescription={() => onEditCardDescription(card.id)}
+              onRename={() => onRenameCard(card.id)}
+              onDelete={() => onDeleteCard(card.id)}
+              onEditLabels={() => onEditCardLabels(card.id)}
+              onEditDueDate={() => onEditCardDueDate(card.id)}
             />
           ))}
+          {listCards.length === 0 && (
+            <p className="rounded-lg border border-dashed border-gray-300 bg-white/70 px-3 py-2 text-sm text-gray-500">
+              No cards yet.
+            </p>
+          )}
         </div>
       </SortableContext>
 
@@ -306,6 +307,16 @@ function KanbanListColumn({
 export function KanbanView() {
   const { state, dispatch } = useApp();
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [createListOpen, setCreateListOpen] = useState(false);
+  const [renameListTarget, setRenameListTarget] = useState<List | null>(null);
+  const [deleteListTarget, setDeleteListTarget] = useState<List | null>(null);
+  const [createCardListId, setCreateCardListId] = useState<string | null>(null);
+  const [renameCardTarget, setRenameCardTarget] = useState<Card | null>(null);
+  const [deleteCardTarget, setDeleteCardTarget] = useState<Card | null>(null);
+  const [descriptionCardTarget, setDescriptionCardTarget] = useState<Card | null>(null);
+  const [labelsCardTarget, setLabelsCardTarget] = useState<Card | null>(null);
+  const [dueDateCardTarget, setDueDateCardTarget] = useState<Card | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -460,149 +471,167 @@ export function KanbanView() {
     })();
   };
 
-  const handleCreateList = (): void => {
+  const handleCreateList = (value: string): void => {
     const boardId = state.currentBoard?.id;
     if (!boardId) {
-      window.alert("Select a board first.");
+      setErrorMessage("Select a board first.");
       return;
     }
-
-    const titleInput = window.prompt("List title");
-    if (titleInput === null) return;
-
-    const title = titleInput.trim();
+    const title = value.trim();
     if (!title) return;
 
     void (async () => {
       try {
         const list = await createList(boardId, title);
         dispatch({ type: "ADD_LIST", payload: list });
+        setCreateListOpen(false);
       } catch (error) {
         console.error("Failed to create list:", error);
-        window.alert("Could not create list. Please try again.");
+        setErrorMessage("Could not create list. Please try again.");
       }
     })();
   };
 
-  const handleRenameList = (listId: string, currentTitle: string): void => {
-    const titleInput = window.prompt("Rename list", currentTitle);
-    if (titleInput === null) return;
+  const handleRenameList = (listId: string): void => {
+    const target = state.lists.find((list) => list.id === listId);
+    if (!target) return;
+    setRenameListTarget(target);
+  };
 
-    const title = titleInput.trim();
-    if (!title || title === currentTitle) return;
-
+  const submitRenameList = (titleValue: string): void => {
+    if (!renameListTarget) return;
+    const title = titleValue.trim();
+    if (!title || title === renameListTarget.title) {
+      setRenameListTarget(null);
+      return;
+    }
     void (async () => {
       try {
-        const updated = await updateList(listId, { title });
+        const updated = await updateList(renameListTarget.id, { title });
         dispatch({ type: "UPDATE_LIST", payload: updated });
+        setRenameListTarget(null);
       } catch (error) {
         console.error("Failed to rename list:", error);
-        window.alert("Could not rename list. Please try again.");
+        setErrorMessage("Could not rename list. Please try again.");
       }
     })();
   };
 
-  const handleDeleteList = (listId: string, title: string): void => {
-    const confirmed = window.confirm(
-      `Delete list "${title}"? This will also remove its cards.`,
-    );
-    if (!confirmed) return;
+  const handleDeleteList = (listId: string): void => {
+    const target = state.lists.find((list) => list.id === listId);
+    if (!target) return;
+    setDeleteListTarget(target);
+  };
 
+  const confirmDeleteList = (): void => {
+    if (!deleteListTarget) return;
     void (async () => {
       try {
-        await deleteList(listId);
-        dispatch({ type: "DELETE_LIST", payload: listId });
+        await deleteList(deleteListTarget.id);
+        dispatch({ type: "DELETE_LIST", payload: deleteListTarget.id });
+        setDeleteListTarget(null);
       } catch (error) {
         console.error("Failed to delete list:", error);
-        window.alert("Could not delete list. Please try again.");
+        setErrorMessage("Could not delete list. Please try again.");
       }
     })();
   };
 
   const handleCreateCard = (listId: string): void => {
-    const titleInput = window.prompt("Card title");
-    if (titleInput === null) return;
+    setCreateCardListId(listId);
+  };
 
-    const title = titleInput.trim();
+  const submitCreateCard = (titleValue: string): void => {
+    if (!createCardListId) return;
+    const title = titleValue.trim();
     if (!title) return;
 
     void (async () => {
       try {
-        const card = await createCard(listId, title);
+        const card = await createCard(createCardListId, title);
         dispatch({ type: "ADD_CARD", payload: card });
+        setCreateCardListId(null);
       } catch (error) {
         console.error("Failed to create card:", error);
-        window.alert("Could not create card. Please try again.");
+        setErrorMessage("Could not create card. Please try again.");
       }
     })();
   };
 
-  const handleRenameCard = (cardId: string, currentTitle: string): void => {
-    const titleInput = window.prompt("Rename card", currentTitle);
-    if (titleInput === null) return;
+  const handleRenameCard = (cardId: string): void => {
+    const target = state.cards.find((card) => card.id === cardId);
+    if (!target) return;
+    setRenameCardTarget(target);
+  };
 
-    const title = titleInput.trim();
-    if (!title || title === currentTitle) return;
-
+  const submitRenameCard = (titleValue: string): void => {
+    if (!renameCardTarget) return;
+    const title = titleValue.trim();
+    if (!title || title === renameCardTarget.title) {
+      setRenameCardTarget(null);
+      return;
+    }
     void (async () => {
       try {
-        const updated = await updateCard(cardId, { title });
+        const updated = await updateCard(renameCardTarget.id, { title });
         dispatch({ type: "UPDATE_CARD", payload: updated });
+        setRenameCardTarget(null);
       } catch (error) {
         console.error("Failed to rename card:", error);
-        window.alert("Could not rename card. Please try again.");
+        setErrorMessage("Could not rename card. Please try again.");
       }
     })();
   };
 
-  const handleDeleteCard = (cardId: string, title: string): void => {
-    const confirmed = window.confirm(`Delete card "${title}"?`);
-    if (!confirmed) return;
+  const handleDeleteCard = (cardId: string): void => {
+    const target = state.cards.find((card) => card.id === cardId);
+    if (!target) return;
+    setDeleteCardTarget(target);
+  };
 
+  const confirmDeleteCard = (): void => {
+    if (!deleteCardTarget) return;
     void (async () => {
       try {
-        await deleteCard(cardId);
-        dispatch({ type: "DELETE_CARD", payload: cardId });
+        await deleteCard(deleteCardTarget.id);
+        dispatch({ type: "DELETE_CARD", payload: deleteCardTarget.id });
+        setDeleteCardTarget(null);
       } catch (error) {
         console.error("Failed to delete card:", error);
-        window.alert("Could not delete card. Please try again.");
+        setErrorMessage("Could not delete card. Please try again.");
       }
     })();
   };
 
-  const handleEditCardDescription = (
-    cardId: string,
-    currentDescription: string | null,
-  ): void => {
-    const descriptionInput = window.prompt(
-      "Add description",
-      currentDescription ?? "",
-    );
-    if (descriptionInput === null) return;
+  const handleEditCardDescription = (cardId: string): void => {
+    const target = state.cards.find((card) => card.id === cardId);
+    if (!target) return;
+    setDescriptionCardTarget(target);
+  };
 
-    const description = descriptionInput.trim() || null;
-
+  const submitCardDescription = (value: string): void => {
+    if (!descriptionCardTarget) return;
+    const description = value.trim() || null;
     void (async () => {
       try {
-        const updated = await updateCard(cardId, { description });
+        const updated = await updateCard(descriptionCardTarget.id, { description });
         dispatch({ type: "UPDATE_CARD", payload: updated });
+        setDescriptionCardTarget(null);
       } catch (error) {
         console.error("Failed to update card description:", error);
-        window.alert("Could not update description. Please try again.");
+        setErrorMessage("Could not update description. Please try again.");
       }
     })();
   };
 
-  const handleEditCardLabels = (
-    cardId: string,
-    currentLabels: string[],
-  ): void => {
-    const input = window.prompt(
-      "Labels (comma-separated). Edit or remove to change.",
-      currentLabels.join(", "),
-    );
-    if (input === null) return;
+  const handleEditCardLabels = (cardId: string): void => {
+    const target = state.cards.find((card) => card.id === cardId);
+    if (!target) return;
+    setLabelsCardTarget(target);
+  };
 
+  const submitCardLabels = (input: string): void => {
+    if (!labelsCardTarget) return;
     const labels = [
       ...new Set(
         input
@@ -614,28 +643,24 @@ export function KanbanView() {
 
     void (async () => {
       try {
-        const updated = await updateCard(cardId, { labels });
+        const updated = await updateCard(labelsCardTarget.id, { labels });
         dispatch({ type: "UPDATE_CARD", payload: updated });
+        setLabelsCardTarget(null);
       } catch (error) {
         console.error("Failed to update labels:", error);
-        window.alert("Could not update labels. Please try again.");
+        setErrorMessage("Could not update labels. Please try again.");
       }
     })();
   };
 
-  const handleEditCardDueDate = (
-    cardId: string,
-    currentDueDate: string | null,
-  ): void => {
-    const defaultValue = currentDueDate
-      ? new Date(currentDueDate).toISOString().split("T")[0]
-      : "";
-    const input = window.prompt(
-      "Due date (YYYY-MM-DD). Leave empty to remove.",
-      defaultValue,
-    );
-    if (input === null) return;
+  const handleEditCardDueDate = (cardId: string): void => {
+    const target = state.cards.find((card) => card.id === cardId);
+    if (!target) return;
+    setDueDateCardTarget(target);
+  };
 
+  const submitCardDueDate = (input: string): void => {
+    if (!dueDateCardTarget) return;
     const trimmed = input.trim();
     const due_date = trimmed
       ? (() => {
@@ -646,17 +671,18 @@ export function KanbanView() {
       : null;
 
     if (trimmed && due_date === undefined) {
-      window.alert("Invalid date format. Use YYYY-MM-DD.");
+      setErrorMessage("Invalid date format. Use YYYY-MM-DD.");
       return;
     }
 
     void (async () => {
       try {
-        const updated = await updateCard(cardId, { due_date });
+        const updated = await updateCard(dueDateCardTarget.id, { due_date });
         dispatch({ type: "UPDATE_CARD", payload: updated });
+        setDueDateCardTarget(null);
       } catch (error) {
         console.error("Failed to update due date:", error);
-        window.alert("Could not update due date. Please try again.");
+        setErrorMessage("Could not update due date. Please try again.");
       }
     })();
   };
@@ -700,8 +726,8 @@ export function KanbanView() {
                 key={list.id}
                 list={list}
                 cards={state.cards}
-                onRenameList={handleRenameList}
-                onDeleteList={handleDeleteList}
+              onRenameList={(listId) => handleRenameList(listId)}
+              onDeleteList={(listId) => handleDeleteList(listId)}
                 onCreateCard={handleCreateCard}
                 onSelectCard={(card) =>
                   dispatch({
@@ -709,17 +735,17 @@ export function KanbanView() {
                     payload: card,
                   })
                 }
-                onEditCardDescription={handleEditCardDescription}
-                onRenameCard={handleRenameCard}
-                onDeleteCard={handleDeleteCard}
-                onEditCardLabels={handleEditCardLabels}
-                onEditCardDueDate={handleEditCardDueDate}
+              onEditCardDescription={(cardId) => handleEditCardDescription(cardId)}
+              onRenameCard={(cardId) => handleRenameCard(cardId)}
+              onDeleteCard={(cardId) => handleDeleteCard(cardId)}
+              onEditCardLabels={(cardId) => handleEditCardLabels(cardId)}
+              onEditCardDueDate={(cardId) => handleEditCardDueDate(cardId)}
               />
             ))}
 
             <button
               type="button"
-              onClick={handleCreateList}
+              onClick={() => setCreateListOpen(true)}
               className="flex h-fit w-72 items-center gap-2 rounded-lg bg-gray-100 p-4 text-gray-600 transition-colors hover:bg-gray-200"
             >
               <Plus className="h-4 w-4" />
@@ -732,6 +758,108 @@ export function KanbanView() {
           {activeCard ? <DragOverlayCard card={activeCard} /> : null}
         </DragOverlay>
       </DndContext>
+      {errorMessage && (
+        <div className="mx-6 mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="flex items-center justify-between gap-2">
+            <span>{errorMessage}</span>
+            <button type="button" onClick={() => setErrorMessage(null)} className="underline">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      <PromptDialog
+        open={createListOpen}
+        title="Create list"
+        label="List name"
+        placeholder="e.g. Backlog"
+        submitLabel="Create"
+        onClose={() => setCreateListOpen(false)}
+        onSubmit={handleCreateList}
+      />
+      <PromptDialog
+        open={renameListTarget !== null}
+        title="Rename list"
+        label="List name"
+        defaultValue={renameListTarget?.title ?? ""}
+        submitLabel="Rename"
+        onClose={() => setRenameListTarget(null)}
+        onSubmit={submitRenameList}
+      />
+      <Dialog
+        open={deleteListTarget !== null}
+        title="Delete list"
+        description={
+          deleteListTarget
+            ? `Delete list "${deleteListTarget.title}"? This will also remove its cards.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onClose={() => setDeleteListTarget(null)}
+        onConfirm={confirmDeleteList}
+      />
+      <PromptDialog
+        open={createCardListId !== null}
+        title="Create card"
+        label="Card title"
+        placeholder="What needs to be done?"
+        submitLabel="Create"
+        onClose={() => setCreateCardListId(null)}
+        onSubmit={submitCreateCard}
+      />
+      <PromptDialog
+        open={renameCardTarget !== null}
+        title="Rename card"
+        label="Card title"
+        defaultValue={renameCardTarget?.title ?? ""}
+        submitLabel="Rename"
+        onClose={() => setRenameCardTarget(null)}
+        onSubmit={submitRenameCard}
+      />
+      <Dialog
+        open={deleteCardTarget !== null}
+        title="Delete card"
+        description={deleteCardTarget ? `Delete card "${deleteCardTarget.title}"?` : undefined}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onClose={() => setDeleteCardTarget(null)}
+        onConfirm={confirmDeleteCard}
+      />
+      <PromptDialog
+        open={descriptionCardTarget !== null}
+        title="Edit description"
+        label="Description"
+        defaultValue={descriptionCardTarget?.description ?? ""}
+        multiline
+        submitLabel="Save"
+        onClose={() => setDescriptionCardTarget(null)}
+        onSubmit={submitCardDescription}
+      />
+      <PromptDialog
+        open={labelsCardTarget !== null}
+        title="Edit labels"
+        label="Labels (comma separated)"
+        defaultValue={labelsCardTarget?.labels?.join(", ") ?? ""}
+        submitLabel="Save"
+        onClose={() => setLabelsCardTarget(null)}
+        onSubmit={submitCardLabels}
+      />
+      <PromptDialog
+        open={dueDateCardTarget !== null}
+        title="Edit due date"
+        label="Due date"
+        type="date"
+        defaultValue={
+          dueDateCardTarget?.due_date
+            ? new Date(dueDateCardTarget.due_date).toISOString().split("T")[0]
+            : ""
+        }
+        submitLabel="Save"
+        onClose={() => setDueDateCardTarget(null)}
+        onSubmit={submitCardDueDate}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { GraduationCap, BookOpen, PenTool, Briefcase, Users, ArrowRight } from 'lucide-react'
+import { applyBoardTemplate, getTemplatesForRole } from '../../services/templateService'
 
 const roles = [
   {
@@ -48,24 +49,33 @@ const roles = [
 type RoleId = (typeof roles)[number]['id']
 
 export function OnboardingPage() {
-  const { updateProfile, refetchProfile } = useAuth()
+  const { user, updateProfile, refetchProfile } = useAuth()
   const [selectedRole, setSelectedRole] = useState<RoleId | null>(null)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const selectedRoleTemplates = selectedRole ? getTemplatesForRole(selectedRole) : []
 
   const handleRoleSelect = async () => {
-    if (!selectedRole) return
+    if (!selectedRole || !selectedTemplateId || !user?.id) return
 
     setIsUpdating(true)
+    setErrorMessage(null)
 
     try {
+      await refetchProfile()
       await updateProfile({
-        role: selectedRole,
+        role: selectedRole
+      })
+      await refetchProfile()
+      await applyBoardTemplate(selectedTemplateId, user.id)
+      await updateProfile({
         onboarded: true
       })
 
       await refetchProfile()
     } catch (error) {
-      alert(
+      setErrorMessage(
         `Failed to complete onboarding: ${
           error instanceof Error ? error.message : 'Unknown error'
         }. Please try again.`
@@ -94,7 +104,10 @@ export function OnboardingPage() {
             return (
               <button
                 key={role.id}
-                onClick={() => setSelectedRole(role.id)}
+                onClick={() => {
+                  setSelectedRole(role.id)
+                  setSelectedTemplateId(null)
+                }}
                 disabled={isUpdating}
                 className={`p-6 rounded-2xl border-2 transition-all duration-200 text-left ${
                   isSelected
@@ -124,6 +137,33 @@ export function OnboardingPage() {
         </div>
 
         {selectedRole && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pick a starter template</h2>
+            <p className="text-gray-600 mb-4">
+              We&apos;ll create your first board automatically so your dashboard is personalized
+              right away.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {selectedRoleTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => setSelectedTemplateId(template.id)}
+                  className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                    selectedTemplateId === template.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                  disabled={isUpdating}
+                >
+                  <h3 className="font-semibold text-gray-900 mb-1">{template.name}</h3>
+                  <p className="text-sm text-gray-600">{template.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedRole && selectedTemplateId && (
           <div className="text-center">
             <button
               onClick={handleRoleSelect}
@@ -142,6 +182,16 @@ export function OnboardingPage() {
                 </>
               )}
             </button>
+          </div>
+        )}
+        {errorMessage && (
+          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center justify-between gap-2">
+              <span>{errorMessage}</span>
+              <button type="button" onClick={() => setErrorMessage(null)} className="underline">
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
       </div>

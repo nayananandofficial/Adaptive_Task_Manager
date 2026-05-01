@@ -149,6 +149,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single()
 
     if (insertError) {
+      if (insertError.code === '23505' || insertError.code === '409') {
+        const { data: retryProfile, error: retryError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .maybeSingle()
+
+        if (!retryError && retryProfile) {
+          return retryProfile
+        }
+      }
       throw insertError
     }
 

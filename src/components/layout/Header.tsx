@@ -24,14 +24,18 @@ export function Header() {
             <Menu className="h-5 w-5 text-gray-600" />
           </button>
           
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_CURRENT_VIEW', payload: 'home' })}
+            className="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-100 transition-colors"
+          >
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
               <Trello className="h-6 w-6 text-white" />
             </div>
             <span className="font-semibold text-gray-900 hidden sm:block">
               FLUXOBOARD
             </span>
-          </div>
+          </button>
         </div>
 
         <div className="flex items-center gap-2">

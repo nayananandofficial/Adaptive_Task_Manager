@@ -20,7 +20,7 @@ interface AppState {
   cards: Card[]
   subtasks: Subtask[]
   selectedCard: Card | null
-  currentView: 'kanban'
+  currentView: 'home' | 'kanban'
   sidebarOpen: boolean
   focusToday: string | null
 }
@@ -58,7 +58,7 @@ const initialState: AppState = {
   cards: [],
   subtasks: [],
   selectedCard: null,
-  currentView: 'kanban',
+  currentView: 'home',
   sidebarOpen: true,
   focusToday: null
 }
@@ -217,7 +217,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let isActive = true
 
     const loadBoards = async (): Promise<void> => {
-      if (!user?.id) return
+      if (!user?.id) {
+        dispatch({ type: 'RESET_STATE' })
+        return
+      }
 
       try {
         const boards = await getBoards(user.id) //currently when the app loads this function is fine because the board amount is small, In the future you might also load: lists and cards here, or implement pagination if the user has a lot of boards. For now we can just load all boards and filter them in the UI, but if performance becomes an issue we can add pagination or load lists/cards on demand when a board is selected.
@@ -229,7 +232,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const board = boards.find((b) => b.id === savedBoardId)
           if (board) {
             dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
+            return
           }
+        }
+
+        if (boards.length > 0) {
+          dispatch({ type: 'SET_CURRENT_BOARD', payload: boards[0] })
+          localStorage.setItem(BOARD_STORAGE_KEY, boards[0].id)
+        } else {
+          dispatch({ type: 'SET_CURRENT_BOARD', payload: null })
+          localStorage.removeItem(BOARD_STORAGE_KEY)
         }
       } catch (error) {
         console.error('Failed to load boards:', error)

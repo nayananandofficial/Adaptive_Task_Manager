@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useApp, BOARD_STORAGE_KEY } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { createBoard, deleteBoard, updateBoard } from '../../services/boardService'
-import { Plus, Home, Trash2, Edit2 } from 'lucide-react'
+import { Dialog, PromptDialog } from '../ui/Dialog'
+import { Plus, Home, Trash2, Edit2, LayoutGrid } from 'lucide-react'
 import type { Database } from '../../lib/database.types'
 
 type Board = Database['public']['Tables']['boards']['Row']
@@ -9,44 +11,55 @@ type Board = Database['public']['Tables']['boards']['Row']
 export function Sidebar() {
   const { state, dispatch } = useApp()
   const { user } = useAuth()
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [renameTarget, setRenameTarget] = useState<Board | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Board | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     const handleSelectBoard = (board: Board): void => {
       dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
+      dispatch({ type: 'SET_CURRENT_VIEW', payload: 'kanban' })
       localStorage.setItem(BOARD_STORAGE_KEY, board.id)
     }
 
-  const handleCreateBoard = async (): Promise<void> => {
-    const titleInput = window.prompt('Enter board title') //this is fine for testing , but should be replaced with a proper modal in production (eg. CreateBoardModal). Create Board button → opens modal → user enters title and clicks "Create" → modal calls handleCreateBoard with title as argument. This way we can also add more fields in the future (eg. color, description, etc.) without changing the function signature. 
-    if (titleInput === null) return
-
-    const title = titleInput.trim()
+  const handleCreateBoard = async (value: string): Promise<void> => {
+    const title = value.trim()
     if (!title) return
 
     if (!user?.id) {
-      window.alert('You must be signed in to create a board.')
+      setErrorMessage('You must be signed in to create a board.')
       return
     }
 
+    setIsSaving(true)
     try {
       const board = await createBoard(title, user.id)
       dispatch({ type: 'ADD_BOARD', payload: board })
+      dispatch({ type: 'SET_CURRENT_BOARD', payload: board })
+      dispatch({ type: 'SET_CURRENT_VIEW', payload: 'kanban' })
+      localStorage.setItem(BOARD_STORAGE_KEY, board.id)
+      setIsCreateOpen(false)
     } catch (error) {
       console.error('Failed to create board:', error)
-      window.alert('Could not create board. Please try again.')
+      setErrorMessage('Could not create board. Please try again.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
   if (!state.sidebarOpen) return null
 
   const views = [
-    { id: 'kanban' as const, label: 'Kanban', icon: Home },
+    { id: 'home' as const, label: 'Home', icon: Home },
+    { id: 'kanban' as const, label: 'Board View', icon: LayoutGrid }
   ]
 
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
       <div className="p-4">
         <button
-          onClick={() => void handleCreateBoard()}
+          onClick={() => setIsCreateOpen(true)}
           className="w-full flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -117,21 +130,7 @@ export function Sidebar() {
                   onClick={(e) => {
                     e.stopPropagation()
 
-                    const newTitle = window.prompt('Rename board', board.title)
-                    if (newTitle === null) return
-
-                    const trimmed = newTitle.trim()
-                    if (!trimmed || trimmed === board.title) return
-
-                    void (async () => {
-                      try {
-                        const updated = await updateBoard(board.id, { title: trimmed })
-                        dispatch({ type: 'UPDATE_BOARD', payload: updated })
-                      } catch (error) {
-                        console.error('Failed to rename board:', error)
-                        window.alert('Could not rename board. Please try again.')
-                      }
-                    })()
+                    setRenameTarget(board)
                   }}
                 >
                   <Edit2 className="h-4 w-4" />
@@ -143,21 +142,7 @@ export function Sidebar() {
                   onClick={(e) => {
                     e.stopPropagation()
 
-                    const confirmed = window.confirm(`Delete "${board.title}"? This cannot be undone.`)
-                    if (!confirmed) return
-
-                    void (async () => {
-                      try {
-                        await deleteBoard(board.id)
-                        dispatch({ type: 'DELETE_BOARD', payload: board.id })
-                        if (state.currentBoard?.id === board.id) {
-                          localStorage.removeItem(BOARD_STORAGE_KEY)
-                        }
-                      } catch (error) {
-                        console.error('Failed to delete board:', error)
-                        window.alert('Could not delete board. Please try again.')
-                      }
-                    })()
+                    setDeleteTarget(board)
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -167,6 +152,91 @@ export function Sidebar() {
           )}
         </div>
       </div>
+      {errorMessage && (
+        <div className="mx-4 mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="flex items-center justify-between gap-2">
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="text-red-700 hover:text-red-900"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      <PromptDialog
+        open={isCreateOpen}
+        title="Create board"
+        description="Start with a custom board. Use Home to create from templates."
+        label="Board name"
+        placeholder="Board title"
+        submitLabel="Create"
+        loading={isSaving}
+        onClose={() => {
+          if (!isSaving) setIsCreateOpen(false)
+        }}
+        onSubmit={(value) => void handleCreateBoard(value)}
+      />
+
+      <PromptDialog
+        open={renameTarget !== null}
+        title="Rename board"
+        label="Board name"
+        defaultValue={renameTarget?.title ?? ''}
+        submitLabel="Rename"
+        onClose={() => setRenameTarget(null)}
+        onSubmit={(value) => {
+          if (!renameTarget) return
+          const trimmed = value.trim()
+          if (!trimmed || trimmed === renameTarget.title) {
+            setRenameTarget(null)
+            return
+          }
+          void (async () => {
+            try {
+              const updated = await updateBoard(renameTarget.id, { title: trimmed })
+              dispatch({ type: 'UPDATE_BOARD', payload: updated })
+              setRenameTarget(null)
+            } catch (error) {
+              console.error('Failed to rename board:', error)
+              setErrorMessage('Could not rename board. Please try again.')
+            }
+          })()
+        }}
+      />
+
+      <Dialog
+        open={deleteTarget !== null}
+        title="Delete board"
+        description={
+          deleteTarget
+            ? `Delete "${deleteTarget.title}"? This action cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return
+          void (async () => {
+            try {
+              await deleteBoard(deleteTarget.id)
+              dispatch({ type: 'DELETE_BOARD', payload: deleteTarget.id })
+              if (state.currentBoard?.id === deleteTarget.id) {
+                localStorage.removeItem(BOARD_STORAGE_KEY)
+                dispatch({ type: 'SET_CURRENT_VIEW', payload: 'home' })
+              }
+              setDeleteTarget(null)
+            } catch (error) {
+              console.error('Failed to delete board:', error)
+              setErrorMessage('Could not delete board. Please try again.')
+            }
+          })()
+        }}
+      />
     </aside>
   )
 }
